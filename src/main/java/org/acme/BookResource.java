@@ -25,10 +25,21 @@ public class BookResource {
 
     @GET
     @Path("/search")
-    public Response search(@QueryParam("title") String title,
-                           @QueryParam("sort") String sort,
-                           @QueryParam("direction") String direction){
-        var books = Book.find("titulo = ?1", title);
+    public Response search(
+            @QueryParam("q") String q,
+            @QueryParam("sort") @DefaultValue("id") String sort,
+            @QueryParam("direction") @DefaultValue("asc") String direction,
+            @QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("size") @DefaultValue("10") int size) {
+
+        String searchTerm = q == null ? "%" : "%" + q.toLowerCase() + "%";
+        String sortParam = sort + " " + ("desc".equalsIgnoreCase(direction) ? "desc" : "asc");
+        String query = "lower(titulo) like ?1 or lower(autor) like ?1 or lower(editora) like ?1";
+
+        var books = Book.find(query, sortParam, searchTerm)
+                        .page(page, size)
+                        .list();
+
         return Response.ok(books).build();
     }
 
