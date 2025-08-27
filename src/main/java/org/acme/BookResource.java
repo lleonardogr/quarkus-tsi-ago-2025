@@ -1,26 +1,43 @@
 package org.acme;
 
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
+import io.quarkus.panache.common.Sort;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
-import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Path("/books")
 public class BookResource {
 
+    @Context
+    UriInfo uriInfo;
+
+    private BookRepresentation rep(Book b){
+        return BookRepresentation.from(b, uriInfo);
+    }
+
+    private List<BookRepresentation> repList(List<?> books){
+        return books.stream().map(o -> rep((Book) o)).collect(Collectors.toList());
+    }
+
     @GET
     public Response getAll(){
-        return Response.ok(Book.listAll()).build();
+        return Response.ok(repList(Book.listAll())).build();
     }
 
     @GET
     @Path("{id}")
-    public Response getById(@PathParam("id") int id){
+    public Response getById(@PathParam("id") long id){
         Book entity = Book.findById(id);
         if(entity == null)
             return Response.status(404).build();
-        return Response.ok(entity).build();
+        return Response.ok(rep(entity)).build();
     }
 
     @GET
@@ -32,28 +49,39 @@ public class BookResource {
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("10") int size) {
 
-        String searchTerm = q == null ? "%" : "%" + q.toLowerCase() + "%";
-        String sortParam = sort + " " + ("desc".equalsIgnoreCase(direction) ? "desc" : "asc");
-        String query = "lower(titulo) like ?1 or lower(autor) like ?1 or lower(editora) like ?1";
+        Set<String> allowed = Set.of("id","titulo","autor","editora","anoLancamento","estaDisponivel");
+        if (!allowed.contains(sort)) {
+            sort = "id";
+        }
 
-        var books = Book.find(query, sortParam, searchTerm)
-                        .page(page, size)
-                        .list();
+        Sort sortObj = Sort.by(
+                sort,
+                "desc".equalsIgnoreCase(direction) ? Sort.Direction.Descending : Sort.Direction.Ascending
+        );
 
-        return Response.ok(books).build();
+        int effectivePage = page <= 1 ? 0 : page - 1;
+
+        PanacheQuery<Book> query = (q == null || q.isBlank())
+                ? Book.findAll(sortObj)
+                : Book.find("lower(titulo) like ?1 or lower(autor) like ?1 or lower(editora) like ?1",
+                            sortObj,
+                            "%" + q.toLowerCase() + "%");
+
+        List<Book> books = query.page(effectivePage, size).list();
+        return Response.ok(repList(books)).build();
     }
 
     @POST
     @Transactional
     public Response insert(Book book){
         Book.persist(book);
-        return Response.status(201).entity(book).build();
+        return Response.status(201).entity(rep(book)).build();
     }
 
     @DELETE
     @Transactional
     @Path("{id}")
-    public Response delete(@PathParam("id") int id){
+    public Response delete(@PathParam("id") long id){
         Book entity = Book.findById(id);
         if(entity == null)
             return Response.status(404).build();
@@ -65,7 +93,7 @@ public class BookResource {
     @PUT
     @Transactional
     @Path("{id}")
-    public Response update(@PathParam("id") int id, Book newBook){
+    public Response update(@PathParam("id") long id, Book newBook){
         Book entity = Book.findById(id);
         if(entity == null)
             return Response.status(404).build();
@@ -76,6 +104,6 @@ public class BookResource {
         entity.anoLancamento = newBook.anoLancamento;
         entity.estaDisponivel = newBook.estaDisponivel;
 
-        return Response.status(200).entity(entity).build();
+        return Response.status(200).entity(rep(entity)).build();
     }
 }

@@ -16,9 +16,9 @@ import java.util.List;
 public class GreetingResource {
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public MyEntity hello() {
-        return new MyEntity("Hello from Quarkus REST");
+    @Produces(MediaType.TEXT_PLAIN)
+    public String hello() {
+        return "Hello from Quarkus REST";
     }
 
     @GET
