@@ -15,20 +15,10 @@ import java.util.stream.Collectors;
 @Path("/books")
 public class BookResource {
 
-    @Context
-    UriInfo uriInfo;
-
-    private BookRepresentation rep(Book b){
-        return BookRepresentation.from(b, uriInfo);
-    }
-
-    private List<BookRepresentation> repList(List<?> books){
-        return books.stream().map(o -> rep((Book) o)).collect(Collectors.toList());
-    }
 
     @GET
     public Response getAll(){
-        return Response.ok(repList(Book.listAll())).build();
+        return Response.ok(Book.listAll()).build();
     }
 
     @GET
@@ -37,7 +27,7 @@ public class BookResource {
         Book entity = Book.findById(id);
         if(entity == null)
             return Response.status(404).build();
-        return Response.ok(rep(entity)).build();
+        return Response.ok(entity).build();
     }
 
     @GET
@@ -68,14 +58,14 @@ public class BookResource {
                             "%" + q.toLowerCase() + "%");
 
         List<Book> books = query.page(effectivePage, size).list();
-        return Response.ok(repList(books)).build();
+        return Response.ok(books).build();
     }
 
     @POST
     @Transactional
     public Response insert(Book book){
         Book.persist(book);
-        return Response.status(201).entity(rep(book)).build();
+        return Response.status(201).entity(book).build();
     }
 
     @DELETE
@@ -104,6 +94,6 @@ public class BookResource {
         entity.anoLancamento = newBook.anoLancamento;
         entity.estaDisponivel = newBook.estaDisponivel;
 
-        return Response.status(200).entity(rep(entity)).build();
+        return Response.status(200).entity((entity)).build();
     }
 }
