@@ -15,10 +15,21 @@ import java.util.stream.Collectors;
 @Path("/books")
 public class BookResource {
 
+    @Context
+    UriInfo uriInfo;
+
+    private BookRepresentation rep(Book b){
+        return BookRepresentation.from(b, uriInfo);
+    }
+
+    private List<BookRepresentation> repList(List<Book> books){
+        return books.stream().map(this::rep).collect(Collectors.toList());
+    }
+
 
     @GET
     public Response getAll(){
-        return Response.ok(Book.listAll()).build();
+        return Response.ok(repList(Book.listAll())).build();
     }
 
     @GET
@@ -27,7 +38,7 @@ public class BookResource {
         Book entity = Book.findById(id);
         if(entity == null)
             return Response.status(404).build();
-        return Response.ok(entity).build();
+        return Response.ok(rep(entity)).build();
     }
 
     @GET
@@ -36,7 +47,7 @@ public class BookResource {
             @QueryParam("q") String q,
             @QueryParam("sort") @DefaultValue("id") String sort,
             @QueryParam("direction") @DefaultValue("asc") String direction,
-            @QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("size") @DefaultValue("10") int size) {
 
         Set<String> allowed = Set.of("id","titulo","autor","editora","anoLancamento","estaDisponivel");
@@ -57,15 +68,23 @@ public class BookResource {
                             sortObj,
                             "%" + q.toLowerCase() + "%");
 
+        long totalElements = query.count();
+        long totalPages = (long) Math.ceil((double) totalElements / size);
+        
         List<Book> books = query.page(effectivePage, size).list();
-        return Response.ok(books).build();
+        
+        SearchBookResponse response = SearchBookResponse.from(
+            books, uriInfo, q, sort, direction, page, size, totalElements, totalPages
+        );
+        
+        return Response.ok(response).build();
     }
 
     @POST
     @Transactional
     public Response insert(Book book){
         Book.persist(book);
-        return Response.status(201).entity(book).build();
+        return Response.status(201).entity(rep(book)).build();
     }
 
     @DELETE
@@ -94,6 +113,6 @@ public class BookResource {
         entity.anoLancamento = newBook.anoLancamento;
         entity.estaDisponivel = newBook.estaDisponivel;
 
-        return Response.status(200).entity((entity)).build();
+        return Response.status(200).entity(rep(entity)).build();
     }
 }
