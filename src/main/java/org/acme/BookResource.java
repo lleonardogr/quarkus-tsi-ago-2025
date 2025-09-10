@@ -2,12 +2,21 @@ package org.acme;
 
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.panache.common.Sort;
+import io.vertx.core.cli.annotations.Summary;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,13 +37,29 @@ public class BookResource {
 
 
     @GET
+    @Operation(
+        summary = "Retorna todos os livros",
+        description = "Retorna uma lista de livros por padrão no formato JSON"
+    )
+    @APIResponse(
+        responseCode = "200",
+        description = "OK",
+        content = @Content(
+            mediaType = "application/json",
+            schema = @Schema(implementation = Book.class, type = SchemaType.ARRAY)
+        )
+    )
     public Response getAll(){
         return Response.ok(repList(Book.listAll())).build();
     }
 
+
+
     @GET
     @Path("{id}")
-    public Response getById(@PathParam("id") long id){
+    public Response getById(
+            @Parameter(description = "Id do livro a ser pesquisado", required = true)
+            @PathParam("id") long id){
         Book entity = Book.findById(id);
         if(entity == null)
             return Response.status(404).build();
@@ -44,8 +69,11 @@ public class BookResource {
     @GET
     @Path("/search")
     public Response search(
+            @Parameter(description = "Query de busca por titulo ou autor ou editora")
             @QueryParam("q") String q,
+            @Parameter(description = "Campo de ordenação da lista de retorno")
             @QueryParam("sort") @DefaultValue("id") String sort,
+            @Parameter(description = "Direção da ordenação ascendente/descendente")
             @QueryParam("direction") @DefaultValue("asc") String direction,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("size") @DefaultValue("10") int size) {
@@ -81,6 +109,27 @@ public class BookResource {
     }
 
     @POST
+    @RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = Book.class)
+            )
+    )
+    @APIResponse(
+        responseCode = "201",
+        description = "Created",
+        content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = Book.class))
+    )
+    @APIResponse(
+        responseCode = "400",
+        description = "Bad Request",
+            content = @Content(
+                    mediaType = "text/plain",
+                    schema = @Schema(implementation = String.class))
+    )
     @Transactional
     public Response insert(Book book){
         Book.persist(book);
