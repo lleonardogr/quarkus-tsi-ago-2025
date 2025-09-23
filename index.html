@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca - Gerenciamento de Livros</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            border-left: 4px solid #2196F3;
+        }
+
+        .section h2 {
+            color: #2196F3;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+        }
+
+        .btn-warning:hover {
+            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
+        }
+
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .book-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 2px solid #eee;
+            transition: all 0.3s;
+        }
+
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border-color: #2196F3;
+        }
+
+        .book-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2196F3;
+            margin-bottom: 10px;
+        }
+
+        .book-info {
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .availability {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .availability.available {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .availability.unavailable {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .book-actions {
+            margin-top: 15px;
+        }
+
+        .book-actions .btn {
+            padding: 8px 15px;
+            font-size: 14px;
+            margin-right: 5px;
+        }
+
+        .search-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: end;
+            margin-bottom: 20px;
+        }
+
+        .search-controls .form-group {
+            min-width: 150px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .pagination .btn {
+            padding: 8px 15px;
+        }
+
+        .pagination .page-info {
+            background: #f0f0f0;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading:after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2196F3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #editModal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .search-controls {
+                flex-direction: column;
+            }
+
+            .books-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Biblioteca Digital</h1>
+            <p>Sistema de Gerenciamento de Livros - API Quarkus</p>
+        </div>
+
+        <div class="content">
+            <div id="messages"></div>
+
+            <!-- Adicionar Livro -->
+            <div class="section">
+                <h2>➕ Adicionar Novo Livro</h2>
+                <form id="addBookForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="titulo">Título</label>
+                            <input type="text" id="titulo" name="titulo" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="autor">Autor</label>
+                            <input type="text" id="autor" name="autor" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editora">Editora</label>
+                            <input type="text" id="editora" name="editora" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="anoLancamento">Ano de Lançamento</label>
+                            <input type="number" id="anoLancamento" name="anoLancamento" min="1000" max="2030" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="estaDisponivel" name="estaDisponivel" checked style="width: auto; margin-right: 8px;">
+                            Disponível para empréstimo
+                        </label>
+                    </div>
+                    <button type="submit" class="btn">Adicionar Livro</button>
+                </form>
+            </div>
+
+            <!-- Buscar Livros -->
+            <div class="section">
+                <h2>🔍 Buscar e Filtrar Livros</h2>
+                <div class="search-controls">
+                    <div class="form-group">
+                        <label for="searchQuery">Buscar</label>
+                        <input type="text" id="searchQuery" placeholder="Título, autor ou editora...">
+                    </div>
+                    <div class="form-group">
+                        <label for="sortField">Ordenar por</label>
+                        <select id="sortField">
+                            <option value="id">ID</option>
+                            <option value="titulo">Título</option>
+                            <option value="autor">Autor</option>
+                            <option value="editora">Editora</option>
+                            <option value="anoLancamento">Ano</option>
+                            <option value="estaDisponivel">Disponibilidade</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sortDirection">Direção</label>
+                        <select id="sortDirection">
+                            <option value="asc">Crescente</option>
+                            <option value="desc">Decrescente</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pageSize">Itens por página</label>
+                        <select id="pageSize">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button type="button" onclick="searchBooks()" class="btn btn-primary">Buscar</button>
+                        <button type="button" onclick="loadAllBooks()" class="btn btn-warning">Listar Todos</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de Livros -->
+            <div class="section">
+                <h2>📖 Livros Cadastrados</h2>
+                <div id="booksContainer">
+                    <div class="loading">Carregando livros...</div>
+                </div>
+                <div id="pagination" class="pagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Livro -->
+    <div id="editModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>✏️ Editar Livro</h2>
+            <form id="editBookForm">
+                <input type="hidden" id="editId" name="id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editTitulo">Título</label>
+                        <input type="text" id="editTitulo" name="titulo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAutor">Autor</label>
+                        <input type="text" id="editAutor" name="autor" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editEditora">Editora</label>
+                        <input type="text" id="editEditora" name="editora" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAnoLancamento">Ano de Lançamento</label>
+                        <input type="number" id="editAnoLancamento" name="anoLancamento" min="1000" max="2030" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="editEstaDisponivel" name="estaDisponivel" style="width: auto; margin-right: 8px;">
+                        Disponível para empréstimo
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                <button type="button" onclick="closeEditModal()" class="btn">Cancelar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentSearchParams = {};
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllBooks();
+
+            // Event listeners
+            document.getElementById('addBookForm').addEventListener('submit', addBook);
+            document.getElementById('editBookForm').addEventListener('submit', updateBook);
+
+            // Modal controls
+            document.querySelector('.close').addEventListener('click', closeEditModal);
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('editModal');
+                if (event.target === modal) {
+                    closeEditModal();
+                }
+            });
+
+            // Enter key for search
+            document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchBooks();
+                }
+            });
+        });
+
+        // Função para mostrar mensagens
+        function showMessage(message, type = 'success') {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = message;
+            messagesDiv.appendChild(messageDiv);
+
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        // Adicionar livro
+        async function addBook(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const book = {
+                titulo: formData.get('titulo'),
+                autor: formData.get('autor'),
+                editora: formData.get('editora'),
+                anoLancamento: parseInt(formData.get('anoLancamento')),
+                estaDisponivel: formData.get('estaDisponivel') === 'on'
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/books`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(book)
+                });
+
+                if (response.ok) {
+                    showMessage('Livro adicionado com sucesso!');
+                    event.target.reset();
+                    document.getElementById('estaDisponivel').checked = true;
+                    loadAllBooks();
+                } else {
+                    showMessage('Erro ao adicionar livro', 'error');
+                }
+            } catch (error) {
+                showMessage('Erro de conexão: ' + error.message, 'error');
+            }
+        }
+
+        // Carregar todos os livros
+        async function loadAllBooks() {
+            currentSearchParams = {};
+            currentPage = 1;
+
+            try {
+                const response = await fetch(`${API_BASE}/books`);
+                if (response.ok) {
+                    const books = await response.json();
+                    displayBooks(books);
+                    document.getElementById('pagination').innerHTML = '';
+                } else {
+                    showMessage('Erro ao carregar livros', 'error');
+                }
+            } catch (error) {
+                showMessage('Erro de conexão: ' + error.message, 'error');
+            }
+        }
+
+        // Buscar livros com paginação
+        async function searchBooks(page = 1) {
+            currentPage = page;
+            const query = document.getElementById('searchQuery').value;
+            const sort = document.getElementById('sortField').value;
+            const direction = document.getElementById('sortDirection').value;
+            const size = document.getElementById('pageSize').value;
+
+            currentSearchParams = { query, sort, direction, size };
+
+            let url = `${API_BASE}/books/search?page=${page}&size=${size}&sort=${sort}&direction=${direction}`;
+            if (query.trim()) {
+                url += `&q=${encodeURIComponent(query)}`;
+            }
+
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    const data = await response.json();
+                    displayBooks(data.books);
+                    displayPagination(data.pagination);
+                } else {
+                    showMessage('Erro ao buscar livros', 'error');
+                }
+            } catch (error) {
+                showMessage('Erro de conexão: ' + error.message, 'error');
+            }
+        }
+
+        // Exibir livros
+        function displayBooks(books) {
+            const container = document.getElementById('booksContainer');
+
+            if (!books || books.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; font-style: italic;">Nenhum livro encontrado</p>';
+                return;
+            }
+
+            const booksHtml = books.map(book => `
+                <div class="book-card">
+                    <div class="book-title">${escapeHtml(book.titulo)}</div>
+                    <div class="book-info"><strong>Autor:</strong> ${escapeHtml(book.autor)}</div>
+                    <div class="book-info"><strong>Editora:</strong> ${escapeHtml(book.editora)}</div>
+                    <div class="book-info"><strong>Ano:</strong> ${book.anoLancamento}</div>
+                    <div class="availability ${book.estaDisponivel ? 'available' : 'unavailable'}">
+                        ${book.estaDisponivel ? '✅ Disponível' : '❌ Indisponível'}
+                    </div>
+                    <div class="book-actions">
+                        <button onclick="editBook(${book.id})" class="btn btn-primary">✏️ Editar</button>
+                        <button onclick="deleteBook(${book.id})" class="btn btn-danger">🗑️ Excluir</button>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `<div class="books-grid">${booksHtml}</div>`;
+        }
+
+        // Exibir paginação
+        function displayPagination(pagination) {
+            const paginationDiv = document.getElementById('pagination');
+
+            if (!pagination || pagination.totalPages <= 1) {
+                paginationDiv.innerHTML = '';
+                return;
+            }
+
+            totalPages = pagination.totalPages;
+
+            let paginationHtml = '';
+
+            // Botão Anterior
+            if (currentPage > 1) {
+                paginationHtml += `<button onclick="searchBooks(${currentPage - 1})" class="btn">← Anterior</button>`;
+            }
+
+            // Info da página
+            paginationHtml += `<div class="page-info">Página ${currentPage} de ${totalPages} (${pagination.totalElements} livros)</div>`;
+
+            // Botão Próximo
+            if (currentPage < totalPages) {
+                paginationHtml += `<button onclick="searchBooks(${currentPage + 1})" class="btn">Próxima →</button>`;
+            }
+
+            paginationDiv.innerHTML = paginationHtml;
+        }
+
+        // Editar livro
+        async function editBook(id) {
+            try {
+                const response = await fetch(`${API_BASE}/books/${id}`);
+                if (response.ok) {
+                    const book = await response.json();
+
+                    document.getElementById('editId').value = book.id;
+                    document.getElementById('editTitulo').value = book.titulo;
+                    document.getElementById('editAutor').value = book.autor;
+                    document.getElementById('editEditora').value = book.editora;
+                    document.getElementById('editAnoLancamento').value = book.anoLancamento;
+                    document.getElementById('editEstaDisponivel').checked = book.estaDisponivel;
+
+                    document.getElementById('editModal').style.display = 'block';
+                } else {
+                    showMessage('Erro ao carregar dados do livro', 'error');
+                }
+            } catch (error) {
+                showMessage('Erro de conexão: ' + error.message, 'error');
+            }
+        }
+
+        // Atualizar livro
+        async function updateBook(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const id = formData.get('id');
+            const book = {
+                titulo: formData.get('titulo'),
+                autor: formData.get('autor'),
+                editora: formData.get('editora'),
+                anoLancamento: parseInt(formData.get('anoLancamento')),
+                estaDisponivel: formData.get('estaDisponivel') === 'on'
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/books/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(book)
+                });
+
+                if (response.ok) {
+                    showMessage('Livro atualizado com sucesso!');
+                    closeEditModal();
+                    if (Object.keys(currentSearchParams).length > 0) {
+                        searchBooks(currentPage);
+                    } else {
+                        loadAllBooks();
+                    }
+                } else {
+                    showMessage('Erro ao atualizar livro', 'error');
+                }
+            } catch (error) {
+                showMessage('Erro de conexão: ' + error.message, 'error');
+            }
+        }
+
+        // Excluir livro
+        async function deleteBook(id) {
+            if (!confirm('Tem certeza que deseja excluir este livro?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/books/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showMessage('Livro excluído com sucesso!');
+                    if (Object.keys(currentSearchParams).length > 0) {
+                        searchBooks(currentPage);
+                    } else {
+                        loadAllBooks();
+                    }
+                } else {
+                    showMessage('Erro ao excluir livro', 'error');
+                }
+            } catch (error) {
+                showMessage('Erro de conexão: ' + error.message, 'error');
+            }
+        }
+
+        // Fechar modal
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
