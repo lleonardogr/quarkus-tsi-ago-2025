@@ -10,4 +10,4 @@ insert into book (id, titulo, autor, editora, anoLancamento, estaDisponivel) val
 insert into book (id, titulo, autor, editora, anoLancamento, estaDisponivel) values (3, 'Capitães da Areia', 'Jorge Amado', 'Companhia das Letras', 1937, false);
 insert into book (id, titulo, autor, editora, anoLancamento, estaDisponivel) values (4, 'Grande Sertão: Veredas', 'Guimarães Rosa', 'Nova Fronteira', 1956, true);
 
--- alter sequence book_seq restart with 5;
+alter sequence book_seq restart with 5;
