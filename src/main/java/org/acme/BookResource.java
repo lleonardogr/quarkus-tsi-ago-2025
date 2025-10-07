@@ -11,10 +11,13 @@ import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Path("/books")
+@Tag(name = "Books", description = "Book management operations")
 public class BookResource {
 
     @Context
@@ -38,17 +42,44 @@ public class BookResource {
 
     @GET
     @Operation(
-        summary = "Retorna todos os livros",
-        description = "Retorna uma lista de livros por padrão no formato JSON"
+        summary = "List all books",
+        description = "Retrieves a complete list of all books in the catalog"
     )
-    @APIResponse(
-        responseCode = "200",
-        description = "OK",
-        content = @Content(
-            mediaType = "application/json",
-            schema = @Schema(implementation = Book.class, type = SchemaType.ARRAY)
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "200",
+            description = "Successfully retrieved list of books",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = Book.class, type = SchemaType.ARRAY),
+                examples = @ExampleObject(
+                    name = "Book list",
+                    value = "[{\"id\":1,\"titulo\":\"Clean Code\",\"autor\":\"Robert Martin\",\"editora\":\"Prentice Hall\",\"anoLancamento\":2008,\"estaDisponivel\":true,\"links\":{\"self\":\"/books/1\"}}]"
+                )
+            )
+        ),
+        @APIResponse(
+            responseCode = "429",
+            description = "Too many requests - rate limit exceeded",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(value = "{\"error\": \"Too many requests. Please try again later.\"}")
+            )
+        ),
+        @APIResponse(
+            responseCode = "500",
+            description = "Internal server error",
+            content = @Content(mediaType = "application/json")
+        ),
+        @APIResponse(
+            responseCode = "504",
+            description = "Gateway timeout - request took too long to process",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(value = "{\"error\": \"Request timeout\"}")
+            )
         )
-    )
+    })
     public Response getAll(){
         return Response.ok(repList(Book.listAll())).build();
     }
@@ -57,8 +88,52 @@ public class BookResource {
 
     @GET
     @Path("{id}")
+    @Operation(
+        summary = "Get book by ID",
+        description = "Retrieves a specific book by its unique identifier"
+    )
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "200",
+            description = "Successfully retrieved the book",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = BookRepresentation.class),
+                examples = @ExampleObject(
+                    name = "Book details",
+                    value = "{\"id\":1,\"titulo\":\"Clean Code\",\"autor\":\"Robert Martin\",\"editora\":\"Prentice Hall\",\"anoLancamento\":2008,\"estaDisponivel\":true,\"links\":{\"self\":\"/books/1\",\"all\":\"/books\"}}"
+                )
+            )
+        ),
+        @APIResponse(
+            responseCode = "404",
+            description = "Book not found with the provided ID",
+            content = @Content(mediaType = "application/json")
+        ),
+        @APIResponse(
+            responseCode = "429",
+            description = "Too many requests - rate limit exceeded",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(value = "{\"error\": \"Too many requests. Please try again later.\"}")
+            )
+        ),
+        @APIResponse(
+            responseCode = "500",
+            description = "Internal server error",
+            content = @Content(mediaType = "application/json")
+        ),
+        @APIResponse(
+            responseCode = "504",
+            description = "Gateway timeout - request took too long to process",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(value = "{\"error\": \"Request timeout\"}")
+            )
+        )
+    })
     public Response getById(
-            @Parameter(description = "Id do livro a ser pesquisado", required = true)
+            @Parameter(description = "Unique identifier of the book", required = true, example = "1")
             @PathParam("id") long id){
         Book entity = Book.findById(id);
         if(entity == null)
@@ -68,14 +143,60 @@ public class BookResource {
 
     @GET
     @Path("/search")
+    @Operation(
+        summary = "Search and filter books",
+        description = "Search books by title, author, or publisher with pagination and sorting capabilities"
+    )
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "200",
+            description = "Successfully retrieved search results",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = SearchBookResponse.class),
+                examples = @ExampleObject(
+                    name = "Search results",
+                    value = "{\"items\":[{\"id\":1,\"titulo\":\"Clean Code\",\"autor\":\"Robert Martin\"}],\"page\":1,\"size\":10,\"total\":1,\"totalPages\":1}"
+                )
+            )
+        ),
+        @APIResponse(
+            responseCode = "400",
+            description = "Bad request - invalid parameters",
+            content = @Content(mediaType = "application/json")
+        ),
+        @APIResponse(
+            responseCode = "429",
+            description = "Too many requests - rate limit exceeded",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(value = "{\"error\": \"Too many requests. Please try again later.\"}")
+            )
+        ),
+        @APIResponse(
+            responseCode = "500",
+            description = "Internal server error",
+            content = @Content(mediaType = "application/json")
+        ),
+        @APIResponse(
+            responseCode = "504",
+            description = "Gateway timeout - request took too long to process",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(value = "{\"error\": \"Request timeout\"}")
+            )
+        )
+    })
     public Response search(
-            @Parameter(description = "Query de busca por titulo ou autor ou editora")
+            @Parameter(description = "Search query for title, author, or publisher", example = "Clean Code")
             @QueryParam("q") String q,
-            @Parameter(description = "Campo de ordenação da lista de retorno")
+            @Parameter(description = "Field to sort by (id, titulo, autor, editora, anoLancamento, estaDisponivel)", example = "titulo")
             @QueryParam("sort") @DefaultValue("id") String sort,
-            @Parameter(description = "Direção da ordenação ascendente/descendente")
+            @Parameter(description = "Sort direction (asc or desc)", example = "asc")
             @QueryParam("direction") @DefaultValue("asc") String direction,
+            @Parameter(description = "Page number (1-based)", example = "1")
             @QueryParam("page") @DefaultValue("1") int page,
+            @Parameter(description = "Number of items per page", example = "10")
             @QueryParam("size") @DefaultValue("10") int size) {
 
         Set<String> allowed = Set.of("id","titulo","autor","editora","anoLancamento","estaDisponivel");
@@ -109,27 +230,62 @@ public class BookResource {
     }
 
     @POST
+    @Operation(
+        summary = "Create a new book",
+        description = "Creates a new book entry in the catalog"
+    )
     @RequestBody(
-            required = true,
-            content = @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = Book.class)
-            )
-    )
-    @APIResponse(
-        responseCode = "201",
-        description = "Created",
+        required = true,
+        description = "Book object to be created",
         content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = Book.class))
+            mediaType = "application/json",
+            schema = @Schema(implementation = Book.class),
+            examples = @ExampleObject(
+                name = "New book",
+                value = "{\"titulo\":\"Clean Code\",\"autor\":\"Robert Martin\",\"editora\":\"Prentice Hall\",\"anoLancamento\":2008,\"estaDisponivel\":true}"
+            )
+        )
     )
-    @APIResponse(
-        responseCode = "400",
-        description = "Bad Request",
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "201",
+            description = "Book successfully created",
             content = @Content(
-                    mediaType = "text/plain",
-                    schema = @Schema(implementation = String.class))
-    )
+                mediaType = "application/json",
+                schema = @Schema(implementation = BookRepresentation.class),
+                examples = @ExampleObject(
+                    name = "Created book",
+                    value = "{\"id\":1,\"titulo\":\"Clean Code\",\"autor\":\"Robert Martin\",\"editora\":\"Prentice Hall\",\"anoLancamento\":2008,\"estaDisponivel\":true,\"links\":{\"self\":\"/books/1\",\"all\":\"/books\"}}"
+                )
+            )
+        ),
+        @APIResponse(
+            responseCode = "400",
+            description = "Bad request - invalid book data",
+            content = @Content(mediaType = "application/json")
+        ),
+        @APIResponse(
+            responseCode = "429",
+            description = "Too many requests - rate limit exceeded",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(value = "{\"error\": \"Too many requests. Please try again later.\"}")
+            )
+        ),
+        @APIResponse(
+            responseCode = "500",
+            description = "Internal server error",
+            content = @Content(mediaType = "application/json")
+        ),
+        @APIResponse(
+            responseCode = "504",
+            description = "Gateway timeout - request took too long to process",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(value = "{\"error\": \"Request timeout\"}")
+            )
+        )
+    })
     @Transactional
     public Response insert(Book book){
         Book.persist(book);
@@ -139,7 +295,45 @@ public class BookResource {
     @DELETE
     @Transactional
     @Path("{id}")
-    public Response delete(@PathParam("id") long id){
+    @Operation(
+        summary = "Delete a book",
+        description = "Deletes a book from the catalog by its unique identifier"
+    )
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "204",
+            description = "Book successfully deleted - no content returned"
+        ),
+        @APIResponse(
+            responseCode = "404",
+            description = "Book not found with the provided ID",
+            content = @Content(mediaType = "application/json")
+        ),
+        @APIResponse(
+            responseCode = "429",
+            description = "Too many requests - rate limit exceeded",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(value = "{\"error\": \"Too many requests. Please try again later.\"}")
+            )
+        ),
+        @APIResponse(
+            responseCode = "500",
+            description = "Internal server error",
+            content = @Content(mediaType = "application/json")
+        ),
+        @APIResponse(
+            responseCode = "504",
+            description = "Gateway timeout - request took too long to process",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(value = "{\"error\": \"Request timeout\"}")
+            )
+        )
+    })
+    public Response delete(
+            @Parameter(description = "Unique identifier of the book to delete", required = true, example = "1")
+            @PathParam("id") long id){
         Book entity = Book.findById(id);
         if(entity == null)
             return Response.status(404).build();
@@ -151,7 +345,71 @@ public class BookResource {
     @PUT
     @Transactional
     @Path("{id}")
-    public Response update(@PathParam("id") long id, Book newBook){
+    @Operation(
+        summary = "Update an existing book",
+        description = "Updates all fields of an existing book identified by its unique ID"
+    )
+    @RequestBody(
+        required = true,
+        description = "Updated book object with new values",
+        content = @Content(
+            mediaType = "application/json",
+            schema = @Schema(implementation = Book.class),
+            examples = @ExampleObject(
+                name = "Update book",
+                value = "{\"titulo\":\"Clean Code - Updated\",\"autor\":\"Robert C. Martin\",\"editora\":\"Prentice Hall\",\"anoLancamento\":2008,\"estaDisponivel\":false}"
+            )
+        )
+    )
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "200",
+            description = "Book successfully updated",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = BookRepresentation.class),
+                examples = @ExampleObject(
+                    name = "Updated book",
+                    value = "{\"id\":1,\"titulo\":\"Clean Code - Updated\",\"autor\":\"Robert C. Martin\",\"editora\":\"Prentice Hall\",\"anoLancamento\":2008,\"estaDisponivel\":false,\"links\":{\"self\":\"/books/1\",\"all\":\"/books\"}}"
+                )
+            )
+        ),
+        @APIResponse(
+            responseCode = "400",
+            description = "Bad request - invalid book data",
+            content = @Content(mediaType = "application/json")
+        ),
+        @APIResponse(
+            responseCode = "404",
+            description = "Book not found with the provided ID",
+            content = @Content(mediaType = "application/json")
+        ),
+        @APIResponse(
+            responseCode = "429",
+            description = "Too many requests - rate limit exceeded",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(value = "{\"error\": \"Too many requests. Please try again later.\"}")
+            )
+        ),
+        @APIResponse(
+            responseCode = "500",
+            description = "Internal server error",
+            content = @Content(mediaType = "application/json")
+        ),
+        @APIResponse(
+            responseCode = "504",
+            description = "Gateway timeout - request took too long to process",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(value = "{\"error\": \"Request timeout\"}")
+            )
+        )
+    })
+    public Response update(
+            @Parameter(description = "Unique identifier of the book to update", required = true, example = "1")
+            @PathParam("id") long id,
+            Book newBook){
         Book entity = Book.findById(id);
         if(entity == null)
             return Response.status(404).build();
