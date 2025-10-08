@@ -15,6 +15,8 @@ import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -232,7 +234,9 @@ public class BookResource {
     @POST
     @Operation(
         summary = "Create a new book",
-        description = "Creates a new book entry in the catalog"
+        description = "Creates a new book entry in the catalog. Supports idempotency via the Idempotency-Key header to prevent duplicate requests. " +
+                      "Include a unique Idempotency-Key header (e.g., UUID) to prevent duplicate book creation if the same request is sent multiple times. " +
+                      "Cached responses are stored for 24 hours."
     )
     @RequestBody(
         required = true,
@@ -263,6 +267,14 @@ public class BookResource {
             responseCode = "400",
             description = "Bad request - invalid book data",
             content = @Content(mediaType = "application/json")
+        ),
+        @APIResponse(
+            responseCode = "409",
+            description = "Conflict - request with this Idempotency-Key is currently being processed",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(value = "{\"error\": \"Request with this idempotency key is currently being processed\"}")
+            )
         ),
         @APIResponse(
             responseCode = "429",
