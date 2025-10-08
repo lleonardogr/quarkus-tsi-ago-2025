@@ -1,5 +1,6 @@
 package org.acme;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -24,6 +25,9 @@ public class IdempotencyFilter implements ContainerRequestFilter, ContainerRespo
 
     @Inject
     IdempotencyService idempotencyService;
+
+    @Inject
+    ObjectMapper objectMapper;
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -80,9 +84,17 @@ public class IdempotencyFilter implements ContainerRequestFilter, ContainerRespo
 
             // Only cache successful responses (2xx) or client errors (4xx)
             if (statusCode >= 200 && statusCode < 500) {
-                // Get response body
+                // Get response body and serialize it to JSON
                 Object entity = responseContext.getEntity();
-                String responseBody = entity != null ? entity.toString() : "";
+                String responseBody = "";
+
+                if (entity != null) {
+                    try {
+                        responseBody = objectMapper.writeValueAsString(entity);
+                    } catch (Exception e) {
+                        responseBody = entity.toString();
+                    }
+                }
 
                 // Store the response for future requests with the same idempotency key
                 idempotencyService.storeResponse(idempotencyKey, statusCode, responseBody);
